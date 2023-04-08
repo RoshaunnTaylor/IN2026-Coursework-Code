@@ -24,6 +24,11 @@ public:
 			mLives -= 1;
 			FirePlayerKilled();
 		}
+
+		if (object->GetType() == GameObjectType("HeartPickup")) {
+			mLives += 1;
+			FireLivesGained();
+		}
 	}
 
 	void AddListener(shared_ptr<IPlayerListener> listener)
@@ -37,6 +42,15 @@ public:
 		for (PlayerListenerList::iterator lit = mListeners.begin();
 			lit != mListeners.end(); ++lit) {
 			(*lit)->OnPlayerKilled(mLives);
+		}
+	}
+
+	void FireLivesGained()
+	{
+		// Send message to all listeners
+		for (PlayerListenerList::iterator lit = mListeners.begin();
+			lit != mListeners.end(); ++lit) {
+			(*lit)->OnLivesChanged(mLives);
 		}
 	}
 

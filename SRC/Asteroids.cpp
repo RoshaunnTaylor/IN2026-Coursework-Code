@@ -1,4 +1,5 @@
 #include "Asteroid.h"
+#include "HeartPickup.h"
 #include "Asteroids.h"
 #include "Animation.h"
 #include "AnimationManager.h"
@@ -20,6 +21,7 @@ Asteroids::Asteroids(int argc, char *argv[])
 {
 	mLevel = 0;
 	mAsteroidCount = 0;
+	mHeartPickupCount = 0;
 }
 
 /** Destructor. */
@@ -56,13 +58,15 @@ void Asteroids::Start()
 
 	Animation *explosion_anim = AnimationManager::GetInstance().CreateAnimationFromFile("explosion", 64, 1024, 64, 64, "explosion_fs.png");
 	Animation *asteroid1_anim = AnimationManager::GetInstance().CreateAnimationFromFile("asteroid1", 128, 8192, 128, 128, "asteroid1_fs.png");
+	Animation* heartpickup_anim = AnimationManager::GetInstance().CreateAnimationFromFile("heartpickup_crystal", 128, 128, 128, 128, "HeartPickup_crystal_fs.png");
 	Animation *spaceship_anim = AnimationManager::GetInstance().CreateAnimationFromFile("spaceship", 128, 128, 128, 128, "spaceship_fs.png");
 
 	// Create a spaceship and add it to the world
 	//mGameWorld->AddObject(CreateSpaceship());
 	
 	// Create some asteroids and add them to the world
-	CreateAsteroids(10);
+	CreateAsteroids(5);
+	//CreateHeartPickups(20);
 
 	//Create the GUI
 	CreateGUI();
@@ -158,6 +162,13 @@ void Asteroids::OnObjectRemoved(GameWorld* world, shared_ptr<GameObject> object)
 			SetTimer(500, START_NEXT_LEVEL); 
 		}
 	}
+
+	if (object->GetType() == GameObjectType("HeartPickup"))
+	{
+		
+		mHeartPickupCount++;
+		
+	}
 }
 
 // PUBLIC INSTANCE METHODS IMPLEMENTING ITimerListener ////////////////////////
@@ -173,7 +184,10 @@ void Asteroids::OnTimer(int value)
 	if (value == START_NEXT_LEVEL)
 	{
 		mLevel++;
-		int num_asteroids = 8 + 2 * mLevel;
+		int num_asteroids = 1 + 1 * mLevel;
+		if (mLevel % 3 == 0) {
+			CreateHeartPickups(1);
+		}
 		CreateAsteroids(num_asteroids);
 	}
 
@@ -194,9 +208,11 @@ shared_ptr<GameObject> Asteroids::CreateSpaceship()
 	mSpaceship->SetBoundingShape(make_shared<BoundingSphere>(mSpaceship->GetThisPtr(), 4.0f));
 	shared_ptr<Shape> bullet_shape = make_shared<Shape>("bullet.shape");
 	mSpaceship->SetBulletShape(bullet_shape);
+
 	Animation *anim_ptr = AnimationManager::GetInstance().GetAnimationByName("spaceship");
 	shared_ptr<Sprite> spaceship_sprite =
 		make_shared<Sprite>(anim_ptr->GetWidth(), anim_ptr->GetHeight(), anim_ptr);
+
 	mSpaceship->SetSprite(spaceship_sprite);
 	mSpaceship->SetScale(0.1f);
 	// Reset spaceship back to centre of the world
@@ -220,6 +236,23 @@ void Asteroids::CreateAsteroids(const uint num_asteroids)
 		asteroid->SetSprite(asteroid_sprite);
 		asteroid->SetScale(0.2f);
 		mGameWorld->AddObject(asteroid);
+	}
+}
+
+void Asteroids::CreateHeartPickups(const uint num_heartpickups)
+{
+	mHeartPickupCount = num_heartpickups;
+	for (uint i = 0; i < num_heartpickups; i++)
+	{
+		Animation* anim_ptr = AnimationManager::GetInstance().GetAnimationByName("heartpickup_crystal");
+		shared_ptr<Sprite> heartpickup_sprite
+			= make_shared<Sprite>(anim_ptr->GetWidth(), anim_ptr->GetHeight(), anim_ptr);
+		
+		shared_ptr<GameObject> heartpickup = make_shared<HeartPickup>();
+		heartpickup->SetBoundingShape(make_shared<BoundingSphere>(heartpickup->GetThisPtr(), 3.0f));
+		heartpickup->SetSprite(heartpickup_sprite);
+		heartpickup->SetScale(0.1f);
+		mGameWorld->AddObject(heartpickup);
 	}
 }
 
@@ -269,6 +302,16 @@ void Asteroids::CreateGUI()
 		= static_pointer_cast<GUIComponent>(mStartScreen);
 	mGameDisplay->GetContainer()->AddComponent(start_screen_component, GLVector2f(0.5f, 0.5f));
 
+}
+
+void Asteroids::OnLivesChanged(int lives_gain)
+{
+	// Format the score message using an string-based stream
+	std::ostringstream msg_stream;
+	msg_stream << "Lives: " << lives_gain;
+	// Get the score message as a string
+	std::string lives_msg = msg_stream.str();
+	mLivesLabel->SetText(lives_msg);
 }
 
 void Asteroids::OnScoreChanged(int score)
