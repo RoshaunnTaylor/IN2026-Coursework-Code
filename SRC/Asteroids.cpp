@@ -113,7 +113,6 @@ void Asteroids::OnKeyPressed(uchar key, int x, int y)
 
 			// Create a spaceship and add it to the world
 			mGameWorld->AddObject(CreateSpaceship());
-			mLevel += 1;
 		}
 
 	default:
@@ -203,7 +202,7 @@ void Asteroids::OnTimer(int value)
 	if (value == START_NEXT_LEVEL)
 	{
 		mLevel++;
-		int num_asteroids = 1 + 1 * mLevel;
+		int num_asteroids = 1 + 2 * mLevel;
 		if (mLevel % 4 == 0) {
 			CreateHeartPickups(1);
 		}
