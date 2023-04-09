@@ -1,5 +1,6 @@
 #include "Asteroid.h"
 #include "HeartPickup.h"
+#include "SpeedPickup.h"
 #include "Asteroids.h"
 #include "Animation.h"
 #include "AnimationManager.h"
@@ -22,6 +23,8 @@ Asteroids::Asteroids(int argc, char *argv[])
 	mLevel = 0;
 	mAsteroidCount = 0;
 	mHeartPickupCount = 0;
+	mSpeedPickupCount = 0;
+	mShipSpeed = 10;
 }
 
 /** Destructor. */
@@ -59,14 +62,16 @@ void Asteroids::Start()
 	Animation *explosion_anim = AnimationManager::GetInstance().CreateAnimationFromFile("explosion", 64, 1024, 64, 64, "explosion_fs.png");
 	Animation *asteroid1_anim = AnimationManager::GetInstance().CreateAnimationFromFile("asteroid1", 128, 8192, 128, 128, "asteroid1_fs.png");
 	Animation* heartpickup_anim = AnimationManager::GetInstance().CreateAnimationFromFile("heartpickup_crystal", 128, 128, 128, 128, "HeartPickup_crystal_fs.png");
+	Animation* speedpickup_anim = AnimationManager::GetInstance().CreateAnimationFromFile("speedpickup_crystal", 128, 128, 128, 128, "SpeedPickup_crystal_fs.png");
 	Animation *spaceship_anim = AnimationManager::GetInstance().CreateAnimationFromFile("spaceship", 128, 128, 128, 128, "spaceship_fs.png");
 
 	// Create a spaceship and add it to the world
 	//mGameWorld->AddObject(CreateSpaceship());
 	
 	// Create some asteroids and add them to the world
-	CreateAsteroids(5);
+	//CreateAsteroids(1);
 	//CreateHeartPickups(20);
+	//CreateSpeedPickups(10);
 
 	//Create the GUI
 	CreateGUI();
@@ -96,12 +101,15 @@ void Asteroids::OnKeyPressed(uchar key, int x, int y)
 	switch (key)
 	{
 	case ' ':
-		mSpaceship->Shoot();
+		if (mLevel > 0) {
+			mSpaceship->Shoot();
+		}
 		break;
 	case 'f':
 		if (mLevel == 0) {
 
 			mStartScreen->SetVisible(false);
+			SetTimer(500, START_NEXT_LEVEL);
 
 			// Create a spaceship and add it to the world
 			mGameWorld->AddObject(CreateSpaceship());
@@ -117,32 +125,36 @@ void Asteroids::OnKeyReleased(uchar key, int x, int y) {}
 
 void Asteroids::OnSpecialKeyPressed(int key, int x, int y)
 {
-	switch (key)
-	{
-	// If up arrow key is pressed start applying forward thrust
-	case GLUT_KEY_UP: mSpaceship->Thrust(10); break;
-	// If left arrow key is pressed start rotating anti-clockwise
-	case GLUT_KEY_LEFT: mSpaceship->Rotate(90); break;
-	// If right arrow key is pressed start rotating clockwise
-	case GLUT_KEY_RIGHT: mSpaceship->Rotate(-90); break;
-	// Default case - do nothing
-	default: break;
+	if (mLevel > 0) {
+		switch (key)
+		{
+			// If up arrow key is pressed start applying forward thrust
+		case GLUT_KEY_UP: mSpaceship->Thrust(mShipSpeed); break;
+			// If left arrow key is pressed start rotating anti-clockwise
+		case GLUT_KEY_LEFT: mSpaceship->Rotate(90); break;
+			// If right arrow key is pressed start rotating clockwise
+		case GLUT_KEY_RIGHT: mSpaceship->Rotate(-90); break;
+			// Default case - do nothing
+		default: break;
+		}
 	}
 }
 
 void Asteroids::OnSpecialKeyReleased(int key, int x, int y)
 {
-	switch (key)
-	{
-	// If up arrow key is released stop applying forward thrust
-	case GLUT_KEY_UP: mSpaceship->Thrust(0); break;
-	// If left arrow key is released stop rotating
-	case GLUT_KEY_LEFT: mSpaceship->Rotate(0); break;
-	// If right arrow key is released stop rotating
-	case GLUT_KEY_RIGHT: mSpaceship->Rotate(0); break;
-	// Default case - do nothing
-	default: break;
-	} 
+	if (mLevel > 0) {
+		switch (key)
+		{
+			// If up arrow key is released stop applying forward thrust
+		case GLUT_KEY_UP: mSpaceship->Thrust(0); break;
+			// If left arrow key is released stop rotating
+		case GLUT_KEY_LEFT: mSpaceship->Rotate(0); break;
+			// If right arrow key is released stop rotating
+		case GLUT_KEY_RIGHT: mSpaceship->Rotate(0); break;
+			// Default case - do nothing
+		default: break;
+		}
+	}
 }
 
 
@@ -169,6 +181,13 @@ void Asteroids::OnObjectRemoved(GameWorld* world, shared_ptr<GameObject> object)
 		mHeartPickupCount++;
 		
 	}
+
+	if (object->GetType() == GameObjectType("SpeedPickup"))
+	{
+
+		mShipSpeed += 5;
+
+	}
 }
 
 // PUBLIC INSTANCE METHODS IMPLEMENTING ITimerListener ////////////////////////
@@ -185,8 +204,11 @@ void Asteroids::OnTimer(int value)
 	{
 		mLevel++;
 		int num_asteroids = 1 + 1 * mLevel;
-		if (mLevel % 3 == 0) {
+		if (mLevel % 4 == 0) {
 			CreateHeartPickups(1);
+		}
+		if (mLevel % 3 == 0) {
+			CreateSpeedPickups(1);
 		}
 		CreateAsteroids(num_asteroids);
 	}
@@ -253,6 +275,23 @@ void Asteroids::CreateHeartPickups(const uint num_heartpickups)
 		heartpickup->SetSprite(heartpickup_sprite);
 		heartpickup->SetScale(0.1f);
 		mGameWorld->AddObject(heartpickup);
+	}
+}
+
+void Asteroids::CreateSpeedPickups(const uint num_speedpickups)
+{
+	mSpeedPickupCount = num_speedpickups;
+	for (uint i = 0; i < num_speedpickups; i++)
+	{
+		Animation* anim_ptr = AnimationManager::GetInstance().GetAnimationByName("speedpickup_crystal");
+		shared_ptr<Sprite> speedpickup_sprite
+			= make_shared<Sprite>(anim_ptr->GetWidth(), anim_ptr->GetHeight(), anim_ptr);
+
+		shared_ptr<GameObject> speedpickup = make_shared<SpeedPickup>();
+		speedpickup->SetBoundingShape(make_shared<BoundingSphere>(speedpickup->GetThisPtr(), 3.0f));
+		speedpickup->SetSprite(speedpickup_sprite);
+		speedpickup->SetScale(0.1f);
+		mGameWorld->AddObject(speedpickup);
 	}
 }
 

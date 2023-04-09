@@ -21,7 +21,7 @@ Asteroid::~Asteroid(void)
 
 bool Asteroid::CollisionTest(shared_ptr<GameObject> o)
 {
-	if (GetType() == o->GetType() || o->GetType() == GameObjectType("HeartPickup")) return false;
+	if (GetType() == o->GetType() || o->GetType() == GameObjectType("HeartPickup") || o->GetType() == GameObjectType("SpeedPickup")) return false;
 	//if (GetType() == GameObjectType("HeartPickup")) return true;
 	if (mBoundingShape.get() == NULL) return false;
 	if (o->GetBoundingShape().get() == NULL) return false;

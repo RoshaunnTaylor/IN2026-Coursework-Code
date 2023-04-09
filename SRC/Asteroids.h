@@ -39,8 +39,6 @@ public:
 
 	void OnPlayerKilled(int lives_left);
 
-	// Declaration of the ILivesLister interface //////////////////////////////
-
 	void OnLivesChanged(int lives_gain);
 
 	// Declaration of IGameWorldListener interface //////////////////////////////
@@ -62,12 +60,15 @@ private:
 	uint mLevel;
 	uint mAsteroidCount;
 	uint mHeartPickupCount;
+	uint mSpeedPickupCount;
+	uint mShipSpeed;
 
 	void ResetSpaceship();
 	shared_ptr<GameObject> CreateSpaceship();
 	void CreateGUI();
 	void CreateAsteroids(const uint num_asteroids);
 	void CreateHeartPickups(const uint num_heartpickups);
+	void CreateSpeedPickups(const uint num_speedpickups);
 	shared_ptr<GameObject> CreateExplosion();
 	
 	const static uint SHOW_GAME_OVER = 0;
